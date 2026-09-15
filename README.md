@@ -20,6 +20,8 @@ ffmpeg is bundled, so there's nothing else to install. You do need
 [rekordbox](https://rekordbox.com) installed and opened at least once. The first launch
 runs a short setup walkthrough.
 
+**Requirements:** rekordbox 6 or 7 · Windows 10/11, or macOS 11 (Big Sur) or newer.
+
 > KRATR is shared as-is, with no warranty. It's built to be safe to point at a real
 > library (see the safety rules below), but keep your own backups.
 
@@ -30,12 +32,18 @@ drop → convert → quality-check → genre/sub-genre folder → import to reko
 
 ## Running it
 
-```bash
-.venv\Scripts\python.exe -m crate            # the app
-.venv\Scripts\python.exe -m crate doctor     # health check — run after every rekordbox update
-.venv\Scripts\python.exe -m crate audit      # scan the whole library for upscales (read-only)
-.venv\Scripts\python.exe -m crate verify     # check dependencies work on this machine
+If you installed KRATR, just open it from the Start menu (Windows) or Applications
+(macOS). The console commands below — a health check and a library audit — ship as
+`kratr-cli` next to the app; run them from a terminal in the install folder:
+
 ```
+kratr-cli doctor     # read-only health check — run after every rekordbox update
+kratr-cli audit      # scan the whole library for upscales (read-only)
+kratr-cli verify     # check everything works on this machine
+```
+
+From a source checkout the equivalent is `.venv\Scripts\python.exe -m crate <command>`
+(see [BUILD.md](BUILD.md)).
 
 ## The safety rules
 
@@ -117,12 +125,11 @@ Every rekordbox test runs against a **sandbox clone**, never the live library. A
 fixtures are generated with ffmpeg rather than committed, so the signals are known
 exactly and the quality detector can be asserted on rather than merely exercised.
 
-## Packaging
+## Building it yourself
 
-```bash
-.venv\Scripts\python.exe -m pip install pyinstaller
-.venv\Scripts\pyinstaller.exe crate.spec
-```
+Full build instructions — the Windows installer, the macOS `.app`/`.dmg`, and the
+GitHub Actions release pipeline — are in [BUILD.md](BUILD.md) and [MAC-BUILD.md](MAC-BUILD.md).
 
-ffmpeg is not bundled — it's found on PATH, because its WinGet install path changes
-with every update.
+The shipped apps **bundle ffmpeg** (installed next to the app on Windows, inside the
+`.app` on macOS), so there's nothing to install on PATH. In a bare source checkout,
+ffmpeg is instead found on PATH.
