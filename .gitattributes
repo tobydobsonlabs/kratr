@@ -1,0 +1,12 @@
+# Normalise line endings to LF in the repo so shell scripts and specs work when
+# checked out on macOS / Linux (CI runners and anyone who clones on a Mac).
+* text=auto eol=lf
+
+# Scripts must be LF or they won't run on macOS/Linux.
+*.command text eol=lf
+*.sh      text eol=lf
+
+# Binary assets — never touch these.
+*.png  binary
+*.ico  binary
+*.icns binary

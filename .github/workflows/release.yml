@@ -1,0 +1,139 @@
+name: Build & Release
+
+# Cut a release by pushing a version tag, e.g.:
+#   git tag v0.1.0 && git push origin v0.1.0
+# This builds the Windows installer and the macOS .dmg in the cloud and attaches both
+# to a GitHub Release that anyone can download. You can also run it by hand from the
+# Actions tab (workflow_dispatch) to test without publishing.
+
+on:
+  push:
+    tags: ["v*"]
+  workflow_dispatch:
+
+permissions:
+  contents: write        # needed to create the Release and upload assets
+
+jobs:
+  # --------------------------------------------------------------------- Windows
+  windows:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+
+      - name: Install dependencies
+        shell: bash
+        run: |
+          python -m pip install --upgrade pip
+          pip install PySide6 pyrekordbox numpy psutil mutagen pyinstaller
+
+      - name: Fetch bundled ffmpeg (essentials static build)
+        shell: pwsh
+        run: |
+          New-Item -ItemType Directory -Force -Path vendor/ffmpeg | Out-Null
+          curl.exe -L -o ffmpeg.zip https://www.gyan.dev/ffmpeg/builds/ffmpeg-release-essentials.zip
+          Expand-Archive ffmpeg.zip -DestinationPath ffmpeg_extract -Force
+          $bin = Get-ChildItem ffmpeg_extract -Recurse -Filter ffmpeg.exe | Select-Object -First 1
+          Copy-Item $bin.FullName vendor/ffmpeg/ffmpeg.exe
+          Copy-Item (Join-Path $bin.Directory.FullName ffprobe.exe) vendor/ffmpeg/ffprobe.exe
+          Copy-Item (Join-Path $bin.Directory.Parent.FullName LICENSE) vendor/ffmpeg/ffmpeg-LICENSE.txt -ErrorAction SilentlyContinue
+
+      - name: Build executables (PyInstaller)
+        shell: bash
+        run: pyinstaller crate.spec --distpath dist-friend --workpath build-friend --noconfirm
+
+      - name: Install Inno Setup
+        shell: pwsh
+        run: choco install innosetup -y --no-progress
+
+      - name: Compile installer
+        shell: pwsh
+        run: |
+          $ver = "${{ github.ref_name }}" -replace '^v',''
+          if (-not $ver) { $ver = "0.0.0" }
+          & "C:\Program Files (x86)\Inno Setup 6\ISCC.exe" "/DAppVersion=$ver" installer/kratr.iss
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: windows-installer
+          path: installer/out/KRATR-Setup-*.exe
+          if-no-files-found: error
+
+  # ----------------------------------------------------------------------- macOS
+  # Intel runner → x86_64 app + ffmpeg, which runs on Intel Macs natively and Apple
+  # Silicon Macs via Rosetta (macOS prompts to install it on first launch).
+  macos:
+    runs-on: macos-13
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install PySide6 pyrekordbox numpy psutil mutagen pyinstaller
+
+      - name: Fetch bundled ffmpeg / ffprobe
+        run: |
+          mkdir -p vendor/ffmpeg-mac
+          for tool in ffmpeg ffprobe; do
+            curl -L -o "$tool.zip" "https://evermeet.cx/ffmpeg/getrelease/$tool/zip"
+            unzip -o -q "$tool.zip" -d vendor/ffmpeg-mac
+            chmod +x "vendor/ffmpeg-mac/$tool"
+          done
+
+      - name: Build KRATR.app (PyInstaller)
+        run: pyinstaller crate-mac.spec --distpath dist --workpath build-mac --noconfirm
+
+      - name: Ad-hoc sign and package .dmg
+        run: |
+          VERSION="${GITHUB_REF_NAME#v}"; [ -n "$VERSION" ] || VERSION="0.0.0"
+          codesign --force --deep --sign - "dist/KRATR.app" || true
+          STAGE="$(mktemp -d)"
+          cp -R "dist/KRATR.app" "$STAGE/"
+          ln -s /Applications "$STAGE/Applications"
+          hdiutil create -volname "KRATR" -srcfolder "$STAGE" -ov -format UDZO "KRATR-$VERSION.dmg"
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: macos-dmg
+          path: KRATR-*.dmg
+          if-no-files-found: error
+
+  # --------------------------------------------------------------------- Release
+  release:
+    needs: [windows, macos]
+    runs-on: ubuntu-latest
+    if: startsWith(github.ref, 'refs/tags/')
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          path: artifacts
+
+      - name: Publish GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: |
+            artifacts/windows-installer/*
+            artifacts/macos-dmg/*
+          generate_release_notes: true
+          body: |
+            ## Install
+
+            **Windows** — download `KRATR-Setup-*.exe` below and run it. On the blue
+            "Windows protected your PC" screen, click **More info → Run anyway**
+            (it's unsigned). No admin needed.
+
+            **macOS** — download `KRATR-*.dmg`, open it, drag **KRATR** into
+            Applications. First launch: **right-click KRATR → Open → Open**. Apple
+            Silicon Macs may be prompted to install Rosetta the first time.
+
+            Both need [rekordbox](https://rekordbox.com) installed and opened once.
+            ffmpeg is bundled — nothing else to install.

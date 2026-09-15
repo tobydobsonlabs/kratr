@@ -1,0 +1,31 @@
+[project]
+name = "kratr"
+version = "0.1.0"
+description = "DJ track intake for rekordbox — convert, quality-check, file, import, tag and colour in one pass."
+requires-python = ">=3.13"
+dependencies = [
+    "PySide6",
+    "pyrekordbox",
+    "numpy",
+    "psutil",
+    "mutagen",
+]
+
+[project.scripts]
+kratr = "crate.__main__:main"
+# Compatibility alias for existing local installs and scripts.
+crate = "crate.__main__:main"
+
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools.packages.find]
+include = ["crate*"]
+
+[tool.setuptools.package-data]
+crate = ["resources/*.ico", "resources/*.png", "resources/*.qss"]
+
+[tool.ruff]
+line-length = 100
+target-version = "py313"

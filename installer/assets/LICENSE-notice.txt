@@ -1,0 +1,18 @@
+KRATR — About this software
+============================
+
+KRATR is a personal tool for DJ track intake into rekordbox, shared with friends
+as-is. There is no warranty of any kind; use it at your own risk. It is designed to
+be safe to point at a real rekordbox library — it never writes while rekordbox is
+running, and it backs up your library before every write — but you are responsible
+for keeping your own backups.
+
+Bundled component: FFmpeg
+-------------------------
+This installer includes ffmpeg.exe and ffprobe.exe from the FFmpeg project
+(https://ffmpeg.org), used to read, inspect and convert audio. These are distributed
+under the GNU General Public License (GPL) v3. The full license text is installed
+alongside the application as "ffmpeg-LICENSE.txt". FFmpeg is a separate work by its
+own authors and is included here unmodified for convenience.
+
+By continuing you acknowledge the above.

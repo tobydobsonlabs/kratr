@@ -1,0 +1,16 @@
+# Build outputs and large bundled binaries — regenerated, not source.
+/dist-friend/
+/build-friend/
+/vendor/ffmpeg/*.exe
+/installer/out/
+/installer/*.log
+/installer/*.done
+# macOS build outputs (produced on a Mac)
+/dist/
+/build-mac/
+/.venv-mac/
+/vendor/ffmpeg-mac/
+/KRATR.dmg
+/kratr-mac.zip
+__pycache__/
+*.pyc
