@@ -5,6 +5,8 @@ filed, imported, added to playlists, tagged and coloured — in one pass.
 
 Replaces the Foobar2000 → Spek → Explorer → rekordbox shuffle.
 
+![KRATR's quality check — a Spek-equivalent spectrogram with a plain-English verdict on whether a file is worth keeping](docs/kratr-quality.png)
+
 ## Download & install
 
 Grab the latest build from the [**Releases page**](../../releases/latest):
