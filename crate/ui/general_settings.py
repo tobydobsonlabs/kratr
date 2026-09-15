@@ -131,6 +131,12 @@ class GeneralSettingsPage(QWidget):
 
         layout.addWidget(self._heading("SAFETY & TOOLS"))
         safety = QFormLayout()
+        self.check_updates = QCheckBox("Check GitHub for a newer version on launch")
+        self.check_updates.setToolTip(
+            "The only time KRATR uses the internet on its own — a quick check for a newer "
+            "release, so you're offered the download instead of having to look for it."
+        )
+        safety.addRow("Updates", self.check_updates)
         self.backup_retention = QSpinBox()
         self.backup_retention.setRange(1, 200)
         self.backup_retention.setSuffix(" backups")
@@ -189,6 +195,7 @@ class GeneralSettingsPage(QWidget):
         self.comment_prefix.setText(settings.comment_tag_prefix)
         self.use_tags.setChecked(settings.use_tags)
         self.use_colours.setChecked(settings.use_colours)
+        self.check_updates.setChecked(settings.check_for_updates)
         self.backup_retention.setValue(settings.backup_retention)
         self.ffmpeg_path.setText(settings.ffmpeg_path or "")
         self.ffprobe_path.setText(settings.ffprobe_path or "")
@@ -220,6 +227,7 @@ class GeneralSettingsPage(QWidget):
         settings.comment_tag_prefix = prefix or "/"
         settings.use_tags = self.use_tags.isChecked()
         settings.use_colours = self.use_colours.isChecked()
+        settings.check_for_updates = self.check_updates.isChecked()
         settings.backup_retention = self.backup_retention.value()
         settings.ffmpeg_path = self.ffmpeg_path.text().strip() or None
         settings.ffprobe_path = self.ffprobe_path.text().strip() or None

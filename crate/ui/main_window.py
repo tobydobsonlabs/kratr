@@ -10,9 +10,10 @@ import logging
 import os
 from pathlib import Path
 
-from PySide6.QtCore import Qt, QThreadPool, QTimer
-from PySide6.QtGui import QKeySequence, QShortcut
+from PySide6.QtCore import Qt, QThread, QThreadPool, QTimer, QUrl, Signal
+from PySide6.QtGui import QDesktopServices, QKeySequence, QShortcut
 from PySide6.QtWidgets import (
+    QApplication,
     QHBoxLayout,
     QLabel,
     QMainWindow,
@@ -41,6 +42,19 @@ from .wizard import ImportWizard
 from .workers import AnalysisTask, FilingTask, QuarantineTask
 
 logger = logging.getLogger(__name__)
+
+
+class _UpdateCheckThread(QThread):
+    """Run the GitHub version check off the GUI thread; emit only if a newer one exists."""
+
+    found = Signal(object)   # update.UpdateInfo
+
+    def run(self) -> None:  # noqa: D102 - Qt entry point
+        from .. import update
+
+        info = update.check()
+        if info is not None:
+            self.found.emit(info)
 
 
 class MainWindow(QMainWindow):
@@ -72,6 +86,32 @@ class MainWindow(QMainWindow):
         self._build()
         self._load_library()
         self._refresh_dashboard()
+        self._start_update_check()
+
+    # ------------------------------------------------------------ update check
+    def _start_update_check(self) -> None:
+        """Ask GitHub (once, in the background) whether a newer KRATR exists."""
+        if not getattr(self.settings, "check_for_updates", True):
+            return
+        # Parented to the application, never the window, so the short-lived thread is
+        # never torn down mid-request. A failure inside it is swallowed (notify-only).
+        self._update_thread = _UpdateCheckThread(QApplication.instance())
+        self._update_thread.found.connect(self._on_update_available)
+        self._update_thread.start()
+
+    def _on_update_available(self, info: object) -> None:
+        from .. import __version__
+
+        box = QMessageBox(self)
+        box.setIcon(QMessageBox.Icon.Information)
+        box.setWindowTitle("Update available")
+        box.setText(f"KRATR {info.version} is available — you're on {__version__}.")
+        box.setInformativeText("Open the download page in your browser?")
+        download = box.addButton("Download", QMessageBox.ButtonRole.AcceptRole)
+        box.addButton("Not now", QMessageBox.ButtonRole.RejectRole)
+        box.exec()
+        if box.clickedButton() is download:
+            QDesktopServices.openUrl(QUrl(info.url))
 
     # ------------------------------------------------------------------ build
     def _build(self) -> None:

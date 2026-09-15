@@ -177,6 +177,11 @@ class Settings:
     #: so this can be turned off to drop the colour page.
     use_colours: bool = True
 
+    # --- updates ----------------------------------------------------------
+    #: Check GitHub for a newer KRATR release on launch and offer a one-click download.
+    #: The only network call KRATR makes on its own; turn off to never phone home.
+    check_for_updates: bool = True
+
     # --- tooling ----------------------------------------------------------
     ffmpeg_path: str | None = None
     ffprobe_path: str | None = None
