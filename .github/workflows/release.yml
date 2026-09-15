@@ -64,16 +64,19 @@ jobs:
           if-no-files-found: error
 
   # ----------------------------------------------------------------------- macOS
-  # Intel runner → x86_64 app + ffmpeg, which runs on Intel Macs natively and Apple
-  # Silicon Macs via Rosetta (macOS prompts to install it on first launch).
+  # Runs on the always-available Apple Silicon runner, but forces an x86_64 Python so
+  # the app and the bundled ffmpeg are both x86_64. That build runs on Intel Macs
+  # natively and on Apple Silicon via Rosetta (macOS prompts to install it on first
+  # launch) — one .dmg for everyone. (The Intel macos-13 runner is unreliably queued.)
   macos:
-    runs-on: macos-13
+    runs-on: macos-latest
     steps:
       - uses: actions/checkout@v4
 
       - uses: actions/setup-python@v5
         with:
           python-version: "3.13"
+          architecture: "x64"
 
       - name: Install dependencies
         run: |
