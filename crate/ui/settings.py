@@ -30,6 +30,7 @@ class SettingsPage(QWidget):
     library_edit = Signal(str, dict, str)
     preferences_saved = Signal()
     apply_requested = Signal()
+    suggest_taxonomy = Signal()
 
     SECTIONS = (
         ("GENERAL", "Paths, import defaults, tagging behaviour and safety"),
@@ -65,6 +66,7 @@ class SettingsPage(QWidget):
         self.folder_page.edit_requested.connect(self.library_edit)
         self.playlists_page.edit_requested.connect(self.library_edit)
         self.tags_page.edit_requested.connect(self.taxonomy_edit)
+        self.tags_page.suggest_requested.connect(self.suggest_taxonomy)
         self.colours_page.edit_requested.connect(self.taxonomy_edit)
 
         self._build()

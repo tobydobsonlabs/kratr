@@ -914,6 +914,8 @@ class TagsStep(Step):
 
     #: Taxonomy edits to queue: (action, args, description)
     edit_requested = Signal(str, dict, str)
+    #: Ask for a generic starter set of tags to be proposed (management mode only).
+    suggest_requested = Signal()
 
     def __init__(
         self, parent: QWidget | None = None, *, management_mode: bool = False
@@ -956,6 +958,19 @@ class TagsStep(Step):
         self.edit_hint.setObjectName("muted")
         controls.addWidget(self.edit_hint)
         controls.addStretch(1)
+
+        # A one-click generic starting point, offered only where you manage the
+        # taxonomy (not mid-import). Everything it proposes is editable afterwards.
+        self.suggest_button = QPushButton("✦  Suggest a starter set…")
+        self.suggest_button.setToolTip(
+            "Fill the four categories with a generic starting set — genres taken from "
+            "your own folders, plus common vibe / setting / format tags. All worked out "
+            "on your machine, no internet. Rename, delete or clear any of it afterwards."
+        )
+        self.suggest_button.clicked.connect(self.suggest_requested)
+        if not management_mode:
+            self.suggest_button.hide()
+        controls.addWidget(self.suggest_button)
         layout.addLayout(controls)
 
         # Taxonomy changes can't be written while rekordbox may be open, so they queue.

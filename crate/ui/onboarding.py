@@ -436,9 +436,10 @@ class OnboardingDialog(QDialog):
         self.tags_checkbox.setChecked(True)
         layout.addWidget(self.tags_checkbox)
         tags_hint = QLabel(
-            "      KRATR suggests a starter set of tags — genres pulled from your own "
-            "folders, plus vibe / setting / format words to edit. Rename them, replace "
-            "them, or ignore them. Turn this off to skip tagging completely."
+            "      Tags start blank — your own, not anyone else's. In Settings → Tags you "
+            "can generate a generic starter set (genres from your own folders, plus common "
+            "vibe / setting / format words) to rename, keep or clear. Turn this off to skip "
+            "tagging completely."
         )
         tags_hint.setObjectName("muted")
         tags_hint.setWordWrap(True)

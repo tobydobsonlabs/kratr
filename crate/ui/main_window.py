@@ -110,6 +110,7 @@ class MainWindow(QMainWindow):
         self.settings_page.library_edit.connect(self._queue_library_edit)
         self.settings_page.preferences_saved.connect(self._on_preferences_saved)
         self.settings_page.apply_requested.connect(self._apply_from_settings)
+        self.settings_page.suggest_taxonomy.connect(self._suggest_starter_tags)
         self.stack.addWidget(self.settings_page)
         layout.addWidget(self.stack, stretch=1)
 
@@ -532,6 +533,95 @@ class MainWindow(QMainWindow):
         if hasattr(self, "_colours"):
             self.wizard.colour_step.set_colours(self._colours)
             self.settings_page.set_colours(self._colours)
+
+    def _suggest_starter_tags(self) -> None:
+        """Offer a generic starter taxonomy — built entirely locally, fully editable.
+
+        Genres are read from the user's own folder tree; the vibe / setting / format
+        words are a generic curated starting point. No network, no API. Nothing is
+        written until they stage and apply it, and every tag can be renamed, deleted or
+        cleared afterwards like any other.
+        """
+        from PySide6.QtWidgets import (
+            QCheckBox,
+            QDialog,
+            QDialogButtonBox,
+            QScrollArea,
+        )
+
+        from ..rekordbox import taxonomy
+
+        genres: list[str] = []
+        subfolders: dict[str, list[str]] = {}
+        if self.library.exists():
+            genres = self.library.genres()
+            subfolders = {g: self.library.subgenres(g) for g in genres}
+
+        playlist_names: list[str] = []
+        if self.reader.available:
+            def walk(nodes: list) -> None:
+                for node in nodes:
+                    playlist_names.append(node.name)
+                    walk(node.children)
+            walk(self.reader.playlist_tree())
+
+        proposal = taxonomy.propose(genres, playlist_names, subfolders)
+
+        dialog = QDialog(self)
+        dialog.setWindowTitle("Suggest a starter set of tags")
+        dialog.resize(560, 560)
+        layout = QVBoxLayout(dialog)
+
+        blurb = QLabel(
+            "A generic starting point, worked out entirely on your machine — no "
+            "internet. The <b>genres</b> come from your own folders; the rest are common "
+            "DJ words. Nothing is written yet, and you can rename, delete or clear any "
+            "of it afterwards."
+        )
+        blurb.setObjectName("muted")
+        blurb.setWordWrap(True)
+        layout.addWidget(blurb)
+
+        scroll = QScrollArea()
+        scroll.setWidgetResizable(True)
+        inner = QWidget()
+        inner_layout = QVBoxLayout(inner)
+        for category in proposal:
+            head = QLabel(f"<b>{category.name}</b>  ({len(category.tags)})")
+            inner_layout.addWidget(head)
+            body = QLabel(", ".join(category.tags) if category.tags else "— none found yet —")
+            body.setObjectName("muted")
+            body.setWordWrap(True)
+            inner_layout.addWidget(body)
+        inner_layout.addStretch(1)
+        scroll.setWidget(inner)
+        layout.addWidget(scroll, stretch=1)
+
+        replace = QCheckBox("Replace the current tags in these four slots")
+        replace.setChecked(True)
+        replace.setToolTip(
+            "On a fresh setup there's nothing to lose. Untick to keep any tags you've "
+            "already made and just add these alongside them."
+        )
+        layout.addWidget(replace)
+
+        buttons = QDialogButtonBox(
+            QDialogButtonBox.StandardButton.Ok | QDialogButtonBox.StandardButton.Cancel
+        )
+        buttons.button(QDialogButtonBox.StandardButton.Ok).setText("Stage these tags")
+        buttons.accepted.connect(dialog.accept)
+        buttons.rejected.connect(dialog.reject)
+        layout.addWidget(buttons)
+
+        if dialog.exec() != QDialog.DialogCode.Accepted:
+            return
+
+        categories = [{"name": c.name, "tags": list(c.tags)} for c in proposal]
+        self._queue_taxonomy_edit(
+            "apply_taxonomy",
+            {"categories": categories, "clear_existing": replace.isChecked()},
+            "apply suggested starter tags",
+        )
 
     def _on_preferences_saved(self) -> None:
         """Make path/default changes live without restarting KRATR."""
