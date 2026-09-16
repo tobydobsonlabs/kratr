@@ -10,16 +10,16 @@ Replaces shuffling through multiple apps when importing your tune.
 
 ### [⬇ Download KRATR](../../releases/latest) for Windows or macOS
 
-![KRATR's quality check — a Spek-equivalent spectrogram with a plain-English verdict on whether a file is worth keeping](docs/kratr-quality.png)
+![KRATR's quality check: a Spek-equivalent spectrogram with a plain-English verdict on whether a file is worth keeping](docs/kratr-quality.png)
 
 ## Download & install
 
 Grab the latest build from the [**Releases page**](../../releases/latest):
 
-- **Windows** — download `KRATR-Setup-*.exe` and run it. On the blue "Windows
-  protected your PC" screen, click **More info → Run anyway** (it's unsigned — normal
+- **Windows.** Download `KRATR-Setup-*.exe` and run it. On the blue "Windows
+  protected your PC" screen, click **More info → Run anyway** (it's unsigned, normal
   for a small tool). No admin needed.
-- **macOS** — download `KRATR-*.dmg`, open it, drag **KRATR** into Applications. First
+- **macOS.** Download `KRATR-*.dmg`, open it, drag **KRATR** into Applications. First
   launch: **right-click KRATR → Open → Open**. Apple Silicon Macs may be asked to
   install Rosetta the first time.
 
@@ -40,11 +40,11 @@ drop → quality-check → convert → genre/sub-genre folder → import to reko
 ## Running it
 
 If you installed KRATR, just open it from the Start menu (Windows) or Applications
-(macOS). The console commands below — a health check and a library audit — ship as
-`kratr-cli` next to the app; run them from a terminal in the install folder:
+(macOS). The console commands below, a health check and a library audit, ship as
+`kratr-cli` next to the app. Run them from a terminal in the install folder:
 
 ```
-kratr-cli doctor     # read-only health check — run after every rekordbox update
+kratr-cli doctor     # read-only health check, run after every rekordbox update
 kratr-cli audit      # scan the whole library for upscales (read-only)
 kratr-cli verify     # check everything works on this machine
 ```
@@ -59,37 +59,37 @@ These are not negotiable, and they're what make it safe to point at a real libra
 - **Never writes while rekordbox is running.** It holds the library in memory and
   flushes on exit, so writing underneath it would lose or corrupt changes. A hard
   block, not a warning.
-- **Backs up before every write session** — `master.db`, `masterPlaylists6.xml`, *and*
-  the `-wal`/`-shm` sidecars. The database runs in WAL mode, so a copy of `master.db`
+- **Backs up before every write session.** It copies `master.db`, `masterPlaylists6.xml`,
+  *and* the `-wal`/`-shm` sidecars. The database runs in WAL mode, so a copy of `master.db`
   alone can be missing committed changes, and a restore that leaves a stale `-wal`
   behind will have it replay straight back over the restored file.
 - **Fails closed on a rekordbox update.** Every launch checks the version and a schema
   fingerprint. If something KRATR writes to has moved, writes are blocked until the
   code is fixed. If the schema merely changed, writes are held for one confirmation.
-  Additive drift — rekordbox adding columns — is tolerated, not treated as breakage.
+  Additive drift, where rekordbox adds columns, is tolerated.
 - **Existing tracks are relocated, never re-imported.** An in-place row update keeps
   the same `ContentID`, so playlists, ratings, play counts, hot cues and beatgrids all
   survive by construction.
-- **One destructive operation exists** — overwriting the comment field — and every
-  original is logged to `comment-backup.jsonl` first, restorable byte-for-byte.
+- **One destructive operation exists:** overwriting the comment field. Every original is
+  logged to `comment-backup.jsonl` first, restorable byte-for-byte.
 
 ## How the quality check works
 
 Two outputs: a Spek-equivalent spectrogram, and a verdict.
 
-The verdict measures the frequency cutoff against the **noise floor**, not the
-spectral peak — real music has a steep tilt and a peak-relative reading puts the
-cutoff far too low (a genuine 320 kbps track measured 7.7 kHz that way).
+The verdict measures the frequency cutoff against the **noise floor** rather than the
+spectral peak. Real music has a steep tilt, and a peak-relative reading puts the cutoff
+far too low. A genuine 320 kbps track measured 7.7 kHz that way.
 
-What flags an upscale is not a low cutoff on its own but a **brick wall**: lossy
-encoders discard everything above their cutoff, leaving a near-vertical cliff that
-nature doesn't make. Plenty of genuinely lossless older records roll off early — this
-library is full of them — and they must not be condemned for it.
+The tell of an upscale is a **brick wall**: lossy encoders discard everything above
+their cutoff, leaving a near-vertical cliff that nature never makes. A low cutoff on its
+own is fine. Plenty of genuinely lossless older records roll off early, and this library
+is full of them, so a gentle roll-off must never condemn a track.
 
 **Known limitation:** for a *natively* lossy file the measured cutoff is unreliable,
 because a float decode preserves the decoder's own −140 dB artefacts up to Nyquist.
 Those files are rated from their declared bitrate instead, which the container reports
-honestly. The upscale check is unaffected — writing to 16-bit quantises those
+honestly. The upscale check is unaffected, because writing to 16-bit quantises those
 artefacts to silence, which is exactly the case that matters.
 
 ## Tagging, and the four-slot ceiling
@@ -101,10 +101,10 @@ add a fifth. Three further channels carry what won't fit:
 |---|---|---|
 | **MyTag** | 4 × 50 | Filterable on a CDJ |
 | **Colour** | 8, single-value | The only attribute readable at a glance without opening a menu |
-| **Comments** | unlimited | CDJ search covers it — `/hazy /sunset` is searchable mid-set |
+| **Comments** | unlimited | CDJ search covers it, so `/hazy /sunset` is searchable mid-set |
 | **Smart playlists** | unlimited | Auto-updating, and browsable on a CDJ instead of menu-diving |
 
-BPM and key need no tags — the CDJ Track Filter handles both natively.
+BPM and key need no tags. The CDJ Track Filter handles both natively.
 
 A category left at a rekordbox default name has been reported to vanish from USB
 export, so KRATR always writes an explicit name to all four.
@@ -134,8 +134,8 @@ exactly and the quality detector can be asserted on rather than merely exercised
 
 ## Building it yourself
 
-Full build instructions — the Windows installer, the macOS `.app`/`.dmg`, and the
-GitHub Actions release pipeline — are in [BUILD.md](BUILD.md) and [MAC-BUILD.md](MAC-BUILD.md).
+Full build instructions for the Windows installer, the macOS `.app`/`.dmg`, and the
+GitHub Actions release pipeline live in [BUILD.md](BUILD.md) and [MAC-BUILD.md](MAC-BUILD.md).
 
 The shipped apps **bundle ffmpeg** (installed next to the app on Windows, inside the
 `.app` on macOS), so there's nothing to install on PATH. In a bare source checkout,
