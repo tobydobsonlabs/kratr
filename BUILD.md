@@ -1,91 +1,96 @@
-# KRATR friend-build
+# Building KRATR
 
-This is an **isolated copy** of KRATR set up to produce a single installer you can send
-to friends. Your personal working copy (`../crate`) is untouched by anything here.
+This covers building the shipped apps yourself: the Windows installer and the macOS
+`.app`/`.dmg`. Every tagged release already builds both in GitHub Actions and attaches them
+to a GitHub Release, so most people never build anything. Read on if you want to do it
+locally, or to understand what the release pipeline does.
 
-## What's different from the personal copy
+## What the packaged app adds over a plain source run
 
-Two additive changes, both invisible to an existing install:
+Three additive changes. Each one stays invisible to an existing install and inert in a bare
+source checkout.
 
-1. **Bundled ffmpeg.** `crate/config.py` → `find_executable()` now also looks for
-   `ffmpeg.exe`/`ffprobe.exe` next to `KRATR.exe` (see `bundled_tool_dir()`), *before*
-   falling back to PATH. In a source checkout there is no bundled copy, so it behaves
-   exactly as before. The installer drops ffmpeg beside `KRATR.exe`.
+1. **Bundled ffmpeg.** `crate/config.py` → `find_executable()` also looks for
+   `ffmpeg.exe`/`ffprobe.exe` next to `KRATR.exe` (see `bundled_tool_dir()`) before falling
+   back to PATH. A source checkout has no bundled copy, so it behaves exactly as before. The
+   Windows installer drops ffmpeg beside `KRATR.exe`, and the Mac build tucks it inside the
+   `.app`.
 
-2. **First-run walkthrough.** `crate/ui/onboarding.py`, launched from `ui/app.py` only
-   when `%APPDATA%\Crate\settings.json` is missing (i.e. a fresh machine). Screens:
-   Welcome → Dependencies → rekordbox → Format → What to include → Library folder. On
-   finish it writes `settings.json`; the app then loads exactly those settings.
+2. **First-run walkthrough.** `crate/ui/onboarding.py`, launched from `ui/app.py` only when
+   `%APPDATA%\Crate\settings.json` is missing, which means a fresh machine. The screens run
+   Welcome → Dependencies → rekordbox → Format → What to include → Library folder. On finish
+   it writes `settings.json`, and the app loads exactly those settings. Anyone already
+   running KRATR never sees it.
 
-3. **Optional tags & colours.** Two new settings, `use_tags` and `use_colours`
-   (`config.py`, default `True`). The "What to include" onboarding screen sets them —
-   tags on, colours off by default, with wording that KRATR only *suggests* a tag set
-   and either page can be skipped. `ui/wizard.py` builds the import flow from these
-   flags (the Tags/Colour step widgets are always constructed so `main_window` can keep
-   configuring them, but only enabled ones are shown). They can also be changed under
-   Settings → "Import steps"; that change takes effect on the next launch (the
-   onboarding choice is live immediately).
-
-Because the walkthrough fires only when there are no settings, anyone who already runs
-KRATR never sees it.
+3. **Optional tags and colours.** Two settings, `use_tags` and `use_colours` (`config.py`,
+   both default `True`). The "What to include" screen sets them, with tags on and colours
+   off by default, and wording that makes clear KRATR only suggests a tag set and that either
+   page can be skipped. `ui/wizard.py` builds the import flow from these flags. You can also
+   change them under Settings → "Import steps", which takes effect on the next launch.
 
 ## Layout
 
 ```
-crate/            the app source (copy of your personal package + the two changes)
-vendor/ffmpeg/    bundled ffmpeg.exe + ffprobe.exe + license  (git-ignore these; large)
+crate/            the app source
+vendor/ffmpeg/    bundled ffmpeg.exe + ffprobe.exe + license  (git-ignored, large)
 installer/
-  kratr.iss       Inno Setup script  → produces installer/out/KRATR-Setup-v<ver>.exe
-  assets/         license notice + friend-facing README shown/installed by the wizard
+  kratr.iss       Inno Setup script  → installer/out/KRATR-Setup-v<ver>.exe
+  assets/         license notice + the first-run README the wizard shows
 dist-friend/      PyInstaller output: KRATR.exe + kratr-cli.exe
 ```
 
-## Rebuilding the installer from scratch
+## Windows
 
-Uses your existing venv as the build interpreter (it is never modified).
+You need Python 3.13. From the repo root:
 
 ```bash
-# 1. Build the executables (run from this folder so it picks up THIS crate/ package)
-"../crate/.venv/Scripts/pyinstaller.exe" crate.spec \
-    --distpath dist-friend --workpath build-friend --noconfirm
+python -m venv .venv
+.venv/Scripts/pip install PySide6 pyrekordbox numpy psutil mutagen pyinstaller
 
-# 2. Refresh bundled ffmpeg only if you want a newer one (essentials static build):
-#    download ffmpeg-release-essentials.zip from https://www.gyan.dev/ffmpeg/builds/
-#    and drop bin\ffmpeg.exe + bin\ffprobe.exe into vendor/ffmpeg/
+# 1. Build the executables
+.venv/Scripts/pyinstaller crate.spec --distpath dist-friend --workpath build-friend --noconfirm
 
-# 3. Compile the installer
+# 2. Put a static ffmpeg build into vendor/ffmpeg/
+#    ffmpeg.exe + ffprobe.exe from ffmpeg-release-essentials.zip
+#    (https://www.gyan.dev/ffmpeg/builds/)
+
+# 3. Compile the installer with Inno Setup 6
 "$LOCALAPPDATA/Programs/Inno Setup 6/ISCC.exe" installer/kratr.iss
 #    → installer/out/KRATR-Setup-v0.1.0.exe
 ```
 
-Bump the version by editing `crate/__init__.py` and passing `/DAppVersion=x.y.z` to
-ISCC (or editing the default in `kratr.iss`).
-
-## Sending it to friends
-
-Send `installer/out/KRATR-Setup-v<ver>.exe`. It's unsigned, so Windows SmartScreen
-shows a blue "Windows protected your PC" screen — tell them to click **More info →
-Run anyway**. It installs per-user (no admin prompt), bundles ffmpeg, and the app walks
-them through setup on first launch.
-
-They still need rekordbox installed and opened once so its library exists.
+Set the version by editing `crate/__init__.py` and passing `/DAppVersion=x.y.z` to ISCC. The
+installer runs per-user with no admin prompt, bundles ffmpeg, and walks the user through
+setup on first launch. It's unsigned, so Windows SmartScreen throws its blue "Windows
+protected your PC" screen. The fix is **More info → Run anyway**. Whoever installs it still
+needs rekordbox installed and opened once, so its library exists.
 
 ## macOS
 
-A Mac build **cannot be produced on Windows** (PyInstaller can't cross-compile), so the
-Mac app is built on a Mac. Everything for it is prepared:
+A Mac build can't be produced on Windows, because PyInstaller doesn't cross-compile, so the
+`.app` gets built on a Mac. The double-clickable `build-mac.command` handles the whole run,
+and [MAC-BUILD.md](MAC-BUILD.md) walks through it step by step. The pieces that ship for
+macOS:
 
-- `crate-mac.spec` — PyInstaller spec producing `dist/KRATR.app`.
-- `build-mac.command` — double-clickable script that sets up Python, deps and Mac
-  ffmpeg, builds the app, and packages `KRATR.dmg`.
-- `MAC-BUILD.md` — plain-language instructions for a non-technical Mac owner.
-- `crate/resources/kratr-icon.icns` — the Mac app icon.
-- `kratr-mac.zip` — a clean bundle of just the above + source (no Windows binaries), to
-  forward to whoever has the Mac.
+- `crate-mac.spec`, the PyInstaller spec that produces `dist/KRATR.app`.
+- `build-mac.command`, which sets up Python, the dependencies, and Mac ffmpeg, builds the
+  app, and packages `KRATR.dmg`.
+- `crate/resources/kratr-icon.icns`, the Mac app icon.
 
-The code is already macOS-aware (`config.py` uses `~/Library/Application Support/Crate`
-and `~/Library/Pioneer/rekordbox`; `bundled_tool_dirs()` finds ffmpeg inside the
-`.app`). Same additive approach — Windows behaviour is unchanged.
+The code is already macOS-aware: `config.py` uses `~/Library/Application Support/Crate` and
+`~/Library/Pioneer/rekordbox`, and `bundled_tool_dirs()` finds ffmpeg inside the `.app`. The
+Mac app is unsigned too, so the first launch is right-click → Open. Removing that step needs
+a paid Apple Developer ID for signing and notarization.
 
-Unsigned, so first launch on macOS is right-click → Open (see MAC-BUILD.md). Removing
-that needs a paid Apple Developer ID for signing + notarization.
+## Cutting a release
+
+Push a version tag and GitHub Actions builds and publishes both installers for you:
+
+```bash
+git tag v0.1.0 && git push origin v0.1.0
+```
+
+The workflow in `.github/workflows/release.yml` stamps the version into `crate/__init__.py`,
+builds the Windows installer and the macOS `.dmg` on cloud runners, and attaches both to a
+generated GitHub Release. You can also run it by hand from the Actions tab to test without
+publishing.

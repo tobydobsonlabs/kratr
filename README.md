@@ -1,9 +1,14 @@
-# KRATR
+<p align="center">
+  <img src="docs/kratr-logo.png" alt="KRATR" width="420">
+</p>
 
-DJ track intake for rekordbox. Drop a file in; it gets converted, quality-checked,
-filed, imported, added to playlists, tagged and coloured — in one pass.
+DJ track intake for rekordbox. Drop a track in and it gets quality-checked first,
+converted to the format you want, then moved into your library rather than copied. From there you can easily
+import to rekordbox, selecting playlists, tags and colours. One pass, start to finish.
 
-Replaces the Foobar2000 → Spek → Explorer → rekordbox shuffle.
+Replaces shuffling through multiple apps when importing your tune.
+
+### [⬇ Download KRATR](../../releases/latest) for Windows or macOS
 
 ![KRATR's quality check — a Spek-equivalent spectrogram with a plain-English verdict on whether a file is worth keeping](docs/kratr-quality.png)
 
@@ -28,7 +33,7 @@ runs a short setup walkthrough.
 > library (see the safety rules below), but keep your own backups.
 
 ```
-drop → convert → quality-check → genre/sub-genre folder → import to rekordbox
+drop → quality-check → convert → genre/sub-genre folder → import to rekordbox
      → playlists → tags → colour
 ```
 

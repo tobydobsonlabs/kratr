@@ -1,5 +1,5 @@
-KRATR — quick start
-===================
+KRATR quick start
+=================
 
 Thanks for trying KRATR. It takes a dropped track and, in one pass, converts it,
 quality-checks it, files it into your genre folders, imports it into rekordbox, and
@@ -12,20 +12,20 @@ The first time you open KRATR it runs a short setup walkthrough:
   2. It finds your rekordbox library and shows what's in it.
   3. You pick your preferred format for lossless tracks (WAV, AIFF, or keep as-is).
   4. You point KRATR at the top folder of your music library.
-That's it — you only do this once.
+That's it. You only do this once.
 
 BEFORE YOU START
 ----------------
 - Install rekordbox and open it at least once, so its library exists.
 - Always let KRATR back up your library (it does this automatically). Your own
   backups are still your responsibility.
-- KRATR will NOT write while rekordbox is open — close rekordbox before importing.
+- KRATR will NOT write while rekordbox is open, so close rekordbox before importing.
 
 "WINDOWS PROTECTED YOUR PC"
 --------------------------
 KRATR isn't signed with a paid certificate, so Windows SmartScreen may show a blue
-warning when you run the installer. This is expected for a small tool shared between
-friends. To continue: click "More info", then "Run anyway".
+warning when you run the installer. That's expected for a small, unsigned tool. To
+continue, click "More info", then "Run anyway".
 
 TROUBLESHOOTING
 ---------------
